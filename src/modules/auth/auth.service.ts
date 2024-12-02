@@ -28,11 +28,32 @@ export class AuthService {
       username: dto.username,
       id: addNewUser.id,
     };
-    const token: string = await this.tokenService.generateJwtToken(
-      payload,
-      agent,
-    );
-    return { ...addNewUser, token };
+    const tokens = await this.tokenService.generateJwtToken(payload, agent);
+    return { ...addNewUser, tokens };
+  }
+
+  async verifyRegisterUser(verifyLink: string, agent: string) {
+    const existUser = await this.prismaService.user.findFirst({
+      where: { verifyLink },
+    });
+    if (!existUser)
+      throw new BadRequestException(AppError.VERIFY_TOKEN_NOT_FOUND);
+    const updateUser = await this.prismaService.user.update({
+      where: { id: existUser.id },
+      data: { verifyLink: 'active' },
+    });
+    console.log(updateUser);
+    const payload = {
+      email: existUser.email,
+      username: existUser.username,
+      id: existUser.id,
+    };
+
+    const tokens = await this.tokenService.generateJwtToken(payload, agent);
+    return {
+      ...updateUser,
+      tokens,
+    };
   }
 
   async loginUser(dto: LoginUserDto, agent: string) {
@@ -54,7 +75,7 @@ export class AuthService {
       username: getUser.username,
       id: getUser.id,
     };
-    const token = await this.tokenService.generateJwtToken(payload, agent);
-    return { ...getUser, token };
+    const tokens = await this.tokenService.generateJwtToken(payload, agent);
+    return { ...getUser, tokens };
   }
 }

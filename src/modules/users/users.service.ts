@@ -8,10 +8,11 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'modules/prisma/prisma.service';
 import { Cache } from 'cache-manager';
+import { v4 as uuidv4 } from 'uuid';
 import * as bcryptjs from 'bcryptjs';
 import { CreateUserDto } from './dto';
 import { USER_ALL_DATA, USER_SELECT_FIELDS } from 'constants/select-return';
-// import sendEmail from '../../../libs/nodemailer';
+import sendEmail from '../../../libs/nodemailer';
 import { ObjectId } from 'mongodb';
 import { AppError } from 'constants/errors';
 import { convertToSecondsUtil } from '../../../libs/decorators/convert-to-seconds.util';
@@ -55,19 +56,20 @@ export class UsersService {
           email: dto.email,
           password: dto?.password,
           photo: dto?.photo,
+          verifyLink: uuidv4(),
         },
         select: USER_SELECT_FIELDS,
       });
-      //   const verifyEmail = {
-      //     from: {
-      //       name: 'PetProject',
-      //       address: this.configService.get('mail_from'),
-      //     },
-      //     to: createNewUser.email,
-      //     subject: 'Verify email',
-      //     html: `<p><strong>Hello ${createNewUser.username} </strong>, you need to confirm your email<a target="_blank" href="${this.configService.get('base_url')}/auth/verify/${createNewUser.verifyLink}">Click verify here</a></p>`,
-      //   };
-      //   await sendEmail(verifyEmail);
+      const verifyEmail = {
+        from: {
+          name: 'HR360',
+          address: this.configService.get('mail_from'),
+        },
+        to: createNewUser.email,
+        subject: 'Verify email',
+        html: `<p><strong>Hello ${createNewUser.username} </strong>, you need to confirm your email<a target="_blank" href="${this.configService.get('base_url')}/api/auth/verify/${createNewUser.verifyLink}">Click verify here</a></p>`,
+      };
+      await sendEmail(verifyEmail);
       await this.cacheManager.set(createNewUser.id, createNewUser);
       await this.cacheManager.set(createNewUser.email, createNewUser);
       return createNewUser;
