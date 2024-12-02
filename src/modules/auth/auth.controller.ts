@@ -15,6 +15,7 @@ import { UserAgent } from '../../../libs/decorators/user-agent.decorator';
 import { ConfigService } from '@nestjs/config';
 import { AuthUserResponse } from './responses';
 import { Response } from 'express';
+import { Cookie } from '../../../libs/decorators/cookies.decorator';
 
 const REFRESH_TOKEN = 'fresh';
 
@@ -54,13 +55,33 @@ export class AuthController {
     @Res() res: Response,
   ) {
     const loginUser = await this.authService.loginUser(dto, agent);
-    res.status(HttpStatus.OK).json({ ...loginUser });
+    if (loginUser.verifyLink === 'active') {
+      this.setRefreshCookies(loginUser, res);
+    } else {
+      delete loginUser.tokens.refreshToken;
+      res.status(HttpStatus.OK).json({ ...loginUser });
+    }
   }
   // @UseGuards(JwtAuthGuard)
   // @Get('logout')
   // async logout(): Promise<void> {
   //   // await this.authService.logout(id, agent);
   // }
+
+  @Get('refresh-tokens')
+  async refreshTokens(
+    @Cookie(REFRESH_TOKEN) refreshToken: string,
+    @UserAgent()
+    agent: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    if (!refreshToken) throw new UnauthorizedException();
+    const newTokens = await this.authService.getRefreshTokens(
+      refreshToken,
+      agent,
+    );
+    this.setRefreshCookies(newTokens, res);
+  }
 
   setRefreshCookieVerify(userVerify, res) {
     if (!userVerify) throw new UnauthorizedException();
@@ -74,7 +95,7 @@ export class AuthController {
     res.redirect(this.configService.get('base_url_client'));
   }
 
-  setRefreshToken(refreshUser, res) {
+  setRefreshCookies(refreshUser, res) {
     if (!refreshUser) throw new UnauthorizedException();
     res.cookie(REFRESH_TOKEN, refreshUser.tokens.refreshToken.token, {
       httpOnly: true,

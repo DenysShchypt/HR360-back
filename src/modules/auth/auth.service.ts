@@ -6,6 +6,7 @@ import { LoginUserDto, RegisterUserDto } from './dto';
 import { UsersService } from 'modules/users/users.service';
 import { AppError } from 'constants/errors';
 import { TokenService } from 'modules/token/token.service';
+import { UserResponse } from 'modules/users/responses';
 
 @Injectable()
 export class AuthService {
@@ -57,12 +58,12 @@ export class AuthService {
   }
 
   async loginUser(dto: LoginUserDto, agent: string) {
-    const getUser = await this.userService
+    const getUser = (await this.userService
       .getUserData(dto.email, true)
       .catch((error) => {
         this.logger.error(`${AppError.USER_NOT_EXIST} ${error.message}`);
         return null;
-      });
+      })) as UserResponse;
     if (!getUser) throw new BadRequestException(AppError.USER_NOT_EXIST);
     const isPasswordValid = await bcryptjs.compare(
       dto.password,
@@ -77,5 +78,9 @@ export class AuthService {
     };
     const tokens = await this.tokenService.generateJwtToken(payload, agent);
     return { ...getUser, tokens };
+  }
+
+  async getRefreshTokens(refreshToken: string, agent: string) {
+    return await this.tokenService.refreshTokens(refreshToken, agent);
   }
 }

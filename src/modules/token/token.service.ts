@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { v4 } from 'uuid';
@@ -46,5 +46,18 @@ export class TokenService {
   }
   async generateJwtToken(user: IUserJWT, agent: string) {
     return await this.generateToken(user, agent);
+  }
+
+  async refreshTokens(refreshToken: string, agent: string) {
+    const token = await this.prismaService.token.findUnique({
+      where: { token: refreshToken },
+    });
+
+    if (!token || new Date(token.exp) < new Date())
+      throw new UnauthorizedException();
+
+    const user = await this.usersService.getUserData(token.id, true);
+    const tokens = await this.generateToken(user, agent);
+    return { ...user, tokens: tokens };
   }
 }

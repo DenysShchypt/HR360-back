@@ -24,7 +24,7 @@ export class UsersService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly configService: ConfigService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   private async hasPassword(password: string, salt: string): Promise<string> {
@@ -78,9 +78,14 @@ export class UsersService {
     }
   }
 
-  async getUserData(idOrEmail: string, isReset: boolean = false) {
+  async getUserData(
+    idOrEmail: string,
+    isReset: boolean = false,
+  ): Promise<UserResponse> {
     if (isReset) await this.cacheManager.del(idOrEmail);
-    const user = await this.cacheManager.get<UserResponse>(idOrEmail);
+    const user = (await this.cacheManager.get<UserResponse>(
+      idOrEmail,
+    )) as UserResponse;
 
     if (user) return user;
     const isId = await this.validateId(idOrEmail);
