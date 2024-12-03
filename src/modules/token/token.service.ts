@@ -52,11 +52,10 @@ export class TokenService {
     const token = await this.prismaService.token.findUnique({
       where: { token: refreshToken },
     });
-
     if (!token || new Date(token.exp) < new Date())
       throw new UnauthorizedException();
 
-    const user = await this.usersService.getUserData(token.id, true);
+    const user = await this.usersService.getUserData(token.userId, true);
     const tokens = await this.generateToken(user, agent);
     return { ...user, tokens: tokens };
   }

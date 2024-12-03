@@ -26,7 +26,7 @@ export class RegisterUserDto extends LoginUserDto {
   @ApiProperty({ example: 'Denys' })
   @IsNotEmpty()
   @IsString()
-  @Length(3, 20)
+  @Length(3, 20, { message: 'Wrong length' })
   @IsAlpha('en-US', {
     message: 'Field must contain only Latin alphabet characters',
   })

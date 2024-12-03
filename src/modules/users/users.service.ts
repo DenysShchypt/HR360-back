@@ -34,7 +34,7 @@ export class UsersService {
     return ObjectId.isValid(id);
   }
 
-  async createUser(dto: CreateUserDto) {
+  async createUser(dto: CreateUserDto): Promise<UserResponse> {
     const user = await this.prismaService.user.findUnique({
       where: { email: dto.email },
     });
@@ -83,10 +83,7 @@ export class UsersService {
     isReset: boolean = false,
   ): Promise<UserResponse> {
     if (isReset) await this.cacheManager.del(idOrEmail);
-    const user = (await this.cacheManager.get<UserResponse>(
-      idOrEmail,
-    )) as UserResponse;
-
+    const user = await this.cacheManager.get<UserResponse>(idOrEmail);
     if (user) return user;
     const isId = await this.validateId(idOrEmail);
     const getUserFromDb = await this.prismaService.user.findFirst({

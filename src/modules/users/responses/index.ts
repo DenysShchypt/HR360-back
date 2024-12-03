@@ -23,9 +23,10 @@ export class UserResponse {
   @Expose()
   photo?: string;
   @IsString()
-  @Expose()
-  verifyLink: string;
-  @IsString()
   @Exclude()
   password: string;
+  @ApiProperty({ example: 'bd21a422-2514-40af-8dee-766ff1a397e8' })
+  @IsString()
+  @Expose()
+  verifyLink: string;
 }

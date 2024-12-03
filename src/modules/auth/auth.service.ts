@@ -7,6 +7,8 @@ import { UsersService } from 'modules/users/users.service';
 import { AppError } from 'constants/errors';
 import { TokenService } from 'modules/token/token.service';
 import { UserResponse } from 'modules/users/responses';
+import { AuthAllResponse } from './responses';
+import { USER_SELECT_FIELDS } from 'constants/select-return';
 
 @Injectable()
 export class AuthService {
@@ -18,11 +20,16 @@ export class AuthService {
     private readonly tokenService: TokenService,
   ) {}
 
-  async registerUser(dto: RegisterUserDto, agent: string) {
-    const addNewUser = await this.userService.createUser(dto).catch((error) => {
-      this.logger.error(`${AppError.ERROR_REGISTRATION}:${error.message}`);
-      return null;
-    });
+  async registerUser(
+    dto: RegisterUserDto,
+    agent: string,
+  ): Promise<AuthAllResponse> {
+    const addNewUser = (await this.userService
+      .createUser(dto)
+      .catch((error) => {
+        this.logger.error(`${AppError.ERROR_REGISTRATION}:${error.message}`);
+        return null;
+      })) as UserResponse;
     if (!addNewUser) throw new BadRequestException(AppError.USER_EXIST);
     const payload = {
       email: dto.email,
@@ -42,8 +49,8 @@ export class AuthService {
     const updateUser = await this.prismaService.user.update({
       where: { id: existUser.id },
       data: { verifyLink: 'active' },
+      select: USER_SELECT_FIELDS,
     });
-    console.log(updateUser);
     const payload = {
       email: existUser.email,
       username: existUser.username,
@@ -57,7 +64,7 @@ export class AuthService {
     };
   }
 
-  async loginUser(dto: LoginUserDto, agent: string) {
+  async loginUser(dto: LoginUserDto, agent: string): Promise<AuthAllResponse> {
     const getUser = (await this.userService
       .getUserData(dto.email, true)
       .catch((error) => {
@@ -78,6 +85,12 @@ export class AuthService {
     };
     const tokens = await this.tokenService.generateJwtToken(payload, agent);
     return { ...getUser, tokens };
+  }
+  async deleteRefreshToken(token: string): Promise<void> {
+    await this.prismaService.token.delete({
+      where: { token },
+    });
+    return;
   }
 
   async getRefreshTokens(refreshToken: string, agent: string) {

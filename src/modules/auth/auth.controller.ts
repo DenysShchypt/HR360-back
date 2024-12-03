@@ -8,12 +8,17 @@ import {
   Res,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiResponse,
+  ApiTags,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginUserDto, RegisterUserDto } from './dto';
 import { UserAgent } from '../../../libs/decorators/user-agent.decorator';
 import { ConfigService } from '@nestjs/config';
-import { AuthUserResponse } from './responses';
+import { AuthAllResponse, AuthRegisterResponse } from './responses';
 import { Response } from 'express';
 import { Cookie } from '../../../libs/decorators/cookies.decorator';
 
@@ -27,14 +32,16 @@ export class AuthController {
     private readonly configService: ConfigService,
   ) {}
 
-  @ApiResponse({ status: 201, type: AuthUserResponse })
+  @ApiResponse({ status: 201, type: AuthRegisterResponse })
   @Post('register')
   async register(
-    @Body() dto: RegisterUserDto,
+    @Body()
+    dto: RegisterUserDto,
     @UserAgent() agent: string,
     @Res() res: Response,
   ): Promise<void> {
     const tokensAndUser = await this.authService.registerUser(dto, agent);
+    delete tokensAndUser.tokens.refreshToken;
     res.status(HttpStatus.OK).json({ ...tokensAndUser });
   }
 
@@ -47,13 +54,33 @@ export class AuthController {
     const userVerify = await this.authService.verifyRegisterUser(token, agent);
     this.setRefreshCookieVerify(userVerify, res);
   }
-
+  @ApiExtraModels(AuthAllResponse)
+  @ApiExtraModels(AuthRegisterResponse)
+  @ApiResponse({
+    status: 200,
+    description: 'Different responses based on user verification status.',
+    schema: {
+      oneOf: [
+        {
+          description:
+            'Response when the user is active and refresh token is set in cookies.',
+          $ref: getSchemaPath(AuthAllResponse),
+        },
+        {
+          description:
+            'Response when the user needs verification and refresh token is excluded.',
+          $ref: getSchemaPath(AuthRegisterResponse),
+        },
+      ],
+    },
+  })
   @Post('login')
   async login(
-    @Body() dto: LoginUserDto,
+    @Body()
+    dto: LoginUserDto,
     @UserAgent() agent: string,
     @Res() res: Response,
-  ) {
+  ): Promise<void> {
     const loginUser = await this.authService.loginUser(dto, agent);
     if (loginUser.verifyLink === 'active') {
       this.setRefreshCookies(loginUser, res);
@@ -62,11 +89,27 @@ export class AuthController {
       res.status(HttpStatus.OK).json({ ...loginUser });
     }
   }
-  // @UseGuards(JwtAuthGuard)
-  // @Get('logout')
-  // async logout(): Promise<void> {
-  //   // await this.authService.logout(id, agent);
-  // }
+
+  @ApiResponse({ status: 200 })
+  @Get('logout')
+  async logout(
+    @Cookie(REFRESH_TOKEN) refreshToken: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    if (!refreshToken) {
+      res.sendStatus(HttpStatus.OK);
+      return;
+    }
+    await this.authService.deleteRefreshToken(refreshToken);
+    res.cookie(REFRESH_TOKEN, '', {
+      httpOnly: true,
+      sameSite: 'none',
+      secure: true,
+      expires: new Date(),
+      path: '/',
+    });
+    res.sendStatus(HttpStatus.OK);
+  }
 
   @Get('refresh-tokens')
   async refreshTokens(

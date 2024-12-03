@@ -16,15 +16,16 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   const configService = app.get(ConfigService);
   const port = configService.get('port');
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+  );
   const config = new DocumentBuilder()
     .setTitle('My pet project')
-    .setDescription('This is api ror study')
+    .setDescription('This is api for study')
     .addTag('API')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-doc', app, document);
-  // app.use(new CorsMiddleware().use);
   await app.listen(port);
 }
 bootstrap();
