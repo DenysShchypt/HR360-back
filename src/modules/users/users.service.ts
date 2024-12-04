@@ -15,7 +15,7 @@ import { USER_ALL_DATA, USER_SELECT_FIELDS } from 'constants/select-return';
 import sendEmail from '../../../libs/nodemailer';
 import { ObjectId } from 'mongodb';
 import { AppError } from 'constants/errors';
-import { convertToSecondsUtil } from '../../../libs/decorators/convert-to-seconds.util';
+import { convertToSecondsUtil } from '../../../libs/convert-to-seconds.util';
 import { UserResponse } from './responses';
 
 @Injectable()

@@ -8,12 +8,7 @@ import {
   Res,
   UnauthorizedException,
 } from '@nestjs/common';
-import {
-  ApiExtraModels,
-  ApiResponse,
-  ApiTags,
-  getSchemaPath,
-} from '@nestjs/swagger';
+import { ApiExtraModels, ApiResponse, getSchemaPath } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginUserDto, RegisterUserDto } from './dto';
 import { UserAgent } from '../../../libs/decorators/user-agent.decorator';
@@ -24,7 +19,6 @@ import { Cookie } from '../../../libs/decorators/cookies.decorator';
 
 const REFRESH_TOKEN = 'fresh';
 
-@ApiTags('API')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -110,7 +104,7 @@ export class AuthController {
     });
     res.sendStatus(HttpStatus.OK);
   }
-
+  @ApiResponse({ status: 201, type: AuthAllResponse })
   @Get('refresh-tokens')
   async refreshTokens(
     @Cookie(REFRESH_TOKEN) refreshToken: string,
@@ -150,6 +144,7 @@ export class AuthController {
     res.status(HttpStatus.OK).json({ ...refreshUser });
   }
 
+  @ApiResponse({ status: 200 })
   @Get('check-server')
   async checkServer(): Promise<string> {
     return 'Server is running!';

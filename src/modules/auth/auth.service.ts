@@ -93,7 +93,10 @@ export class AuthService {
     return;
   }
 
-  async getRefreshTokens(refreshToken: string, agent: string) {
+  async getRefreshTokens(
+    refreshToken: string,
+    agent: string,
+  ): Promise<AuthAllResponse> {
     return await this.tokenService.refreshTokens(refreshToken, agent);
   }
 }

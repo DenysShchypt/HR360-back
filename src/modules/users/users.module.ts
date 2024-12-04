@@ -3,6 +3,7 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { CacheModule } from '@nestjs/cache-manager';
 import { PrismaService } from 'modules/prisma/prisma.service';
+import { JwtStrategy } from 'strategy/jwtStrategy';
 
 @Module({
   imports: [
@@ -11,7 +12,7 @@ import { PrismaService } from 'modules/prisma/prisma.service';
     }),
   ],
   controllers: [UsersController],
-  providers: [UsersService, PrismaService],
+  providers: [UsersService, PrismaService, JwtStrategy],
   exports: [UsersService],
 })
 export class UsersModule {}

@@ -5,6 +5,7 @@ import { AuthModule } from 'modules/auth/auth.module';
 import { DepartmentsModule } from 'modules/departments/departments.module';
 import { EmployeesModule } from 'modules/employees/employees.module';
 import { PrismaModule } from 'modules/prisma/prisma.module';
+import { TokenModule } from 'modules/token/token.module';
 import { UsersModule } from 'modules/users/users.module';
 
 @Module({
@@ -14,6 +15,7 @@ import { UsersModule } from 'modules/users/users.module';
       load: [configurations],
     }),
     AuthModule,
+    TokenModule,
     DepartmentsModule,
     EmployeesModule,
     UsersModule,

@@ -42,6 +42,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         // Повернення null, щоб сигналізувати про невдалу спробу отримання користувача
         return null;
       });
+
     if (!user) {
       throw new UnauthorizedException(AppError.USER_NOT_FOUND);
     }

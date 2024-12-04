@@ -6,6 +6,7 @@ import { IUserJWT } from 'interfaces/auth';
 import { PrismaService } from 'modules/prisma/prisma.service';
 import { UsersService } from 'modules/users/users.service';
 import { add } from 'date-fns';
+import { AuthAllResponse, RefreshToken, Tokens } from 'modules/auth/responses';
 
 @Injectable()
 export class TokenService {
@@ -16,7 +17,7 @@ export class TokenService {
     private readonly usersService: UsersService,
   ) {}
 
-  private async generateToken(user: IUserJWT, agent: string) {
+  private async generateToken(user: IUserJWT, agent: string): Promise<Tokens> {
     const payload = { user };
     const token =
       'Bearer ' +
@@ -28,7 +29,7 @@ export class TokenService {
     return { token, refreshToken };
   }
 
-  private async generateRefreshToken(id, agent) {
+  private async generateRefreshToken(id, agent): Promise<RefreshToken> {
     const _token = await this.prismaService.token.findFirst({
       where: { userId: id, userAgent: agent },
     });
@@ -44,11 +45,14 @@ export class TokenService {
       },
     });
   }
-  async generateJwtToken(user: IUserJWT, agent: string) {
+  async generateJwtToken(user: IUserJWT, agent: string): Promise<Tokens> {
     return await this.generateToken(user, agent);
   }
 
-  async refreshTokens(refreshToken: string, agent: string) {
+  async refreshTokens(
+    refreshToken: string,
+    agent: string,
+  ): Promise<AuthAllResponse> {
     const token = await this.prismaService.token.findUnique({
       where: { token: refreshToken },
     });

@@ -10,5 +10,6 @@ import { TokenModule } from 'modules/token/token.module';
   imports: [UsersModule, TokenModule],
   controllers: [AuthController],
   providers: [AuthService, PrismaService, JwtStrategy],
+  exports: [AuthService],
 })
 export class AuthModule {}
