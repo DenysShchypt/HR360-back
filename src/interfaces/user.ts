@@ -3,5 +3,5 @@ export interface IUser {
   email: string;
   username: string;
   photo?: string;
-  verifyLink: string;
+  verifyLink?: string;
 }

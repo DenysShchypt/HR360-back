@@ -36,7 +36,7 @@ export class AuthController {
   ): Promise<void> {
     const tokensAndUser = await this.authService.registerUser(dto, agent);
     delete tokensAndUser.tokens.refreshToken;
-    res.status(HttpStatus.OK).json({ ...tokensAndUser });
+    res.status(HttpStatus.CREATED).json({ ...tokensAndUser });
   }
 
   @Get('verify/:token')
@@ -124,9 +124,11 @@ export class AuthController {
     if (!userVerify) throw new UnauthorizedException();
     res.cookie(REFRESH_TOKEN, userVerify.tokens.refreshToken.token, {
       httpOnly: true, // Кука доступна тільки через HTTP, і не доступна через JavaScript
-      sameSite: 'none',
+      // sameSite: 'none',
+      sameSite: 'lax', // or 'strict' depending on your needs
       expires: new Date(userVerify.tokens.refreshToken.exp), // Дата закінчення дії куки
-      secure: true, // Кука буде передаватись тільки по HTTPS, якщо середовище - production
+      // secure: true, // Кука буде передаватись тільки по HTTPS, якщо середовище - production
+      secure: false, // This should be false when working locally
       path: '/', // Шлях, де кука буде доступна
     });
     res.redirect(this.configService.get('base_url_client'));
@@ -136,9 +138,11 @@ export class AuthController {
     if (!refreshUser) throw new UnauthorizedException();
     res.cookie(REFRESH_TOKEN, refreshUser.tokens.refreshToken.token, {
       httpOnly: true,
-      sameSite: 'none',
+      // sameSite: 'none',
+      sameSite: 'lax', // or 'strict' depending on your needs
       expires: new Date(refreshUser.tokens.refreshToken.exp),
-      secure: true,
+      // secure: true,
+      secure: false, // This should be false when working locally
       path: '/',
     });
     res.status(HttpStatus.OK).json({ ...refreshUser });

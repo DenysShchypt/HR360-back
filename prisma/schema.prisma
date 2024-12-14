@@ -35,3 +35,29 @@ model Token {
 
   @@map("tokens")
 }
+
+model Departments {
+  id              String     @id @default(auto()) @map("_id") @db.ObjectId
+  name            String     @unique
+  totalEmployee   Int
+  headcountChange Int
+  employees       Employee[] @relation("DepartmentEmployees")
+
+  @@map("departments")
+}
+
+model Employee {
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  name         String      @unique
+  photo        String
+  role         String
+  employment   String
+  status       String
+  checkIn      String
+  checkOut     String
+  overTime     String?
+  department   Departments @relation("DepartmentEmployees", fields: [departmentId], references: [id])
+  departmentId String      @db.ObjectId
+
+  @@map("employees")
+}
