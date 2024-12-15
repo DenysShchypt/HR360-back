@@ -14,13 +14,15 @@ datasource db {
 }
 
 model User {
-  id         String  @id @default(auto()) @map("_id") @db.ObjectId
-  username   String?
-  email      String  @unique
-  password   String?
-  photo      String?
-  verifyLink String?
-  tokens     Token[] @relation("UserTokens")
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  username    String?
+  email       String        @unique
+  password    String?
+  photo       String?
+  verifyLink  String?
+  tokens      Token[]       @relation("UserTokens")
+  departments Departments[] @relation("UserDepartments")
+  employees   Employee[]    @relation("UserEmployees")
 
   @@map("users")
 }
@@ -41,6 +43,8 @@ model Departments {
   name            String     @unique
   totalEmployee   Int
   headcountChange Int
+  user            User       @relation("UserDepartments", fields: [userId], references: [id], onDelete: Cascade)
+  userId          String     @db.ObjectId
   employees       Employee[] @relation("DepartmentEmployees")
 
   @@map("departments")
@@ -58,6 +62,8 @@ model Employee {
   overTime     String?
   department   Departments @relation("DepartmentEmployees", fields: [departmentId], references: [id])
   departmentId String      @db.ObjectId
+  user         User        @relation("UserEmployees", fields: [userId], references: [id], onDelete: Cascade)
+  userId       String      @db.ObjectId
 
   @@map("employees")
 }

@@ -7,7 +7,21 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   async onModuleInit() {
-    await this.$connect();
+    let retries = 5;
+    while (retries) {
+      try {
+        await this.$connect();
+        console.log('Database connected successfully');
+        break;
+      } catch (error) {
+        console.error('Database connection failed. Retrying...', error);
+        retries -= 1;
+        if (retries === 0) {
+          throw new Error('Could not connect to the database');
+        }
+        await new Promise((res) => setTimeout(res, 5000)); // Retry after 5 seconds
+      }
+    }
   }
   async onModuleDestroy() {
     await this.$disconnect();
