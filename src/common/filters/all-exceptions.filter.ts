@@ -31,7 +31,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
       console.error('Unexpected error:', exception);
     }
 
-    // Log additional details about the error
     console.error({
       statusCode: status,
       timestamp: new Date().toISOString(),

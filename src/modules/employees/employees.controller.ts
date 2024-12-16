@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'guards/jwt-guard';
 import { EmployeesService } from './employees.service';
@@ -24,5 +32,13 @@ export class EmployeesController {
     @CurrentUser('id') id: string,
   ) {
     return await this.employeesService.addEmployees(id, employeeDto);
+  }
+  @ApiResponse({ status: 200 })
+  @Delete('delete-employee')
+  async deleteEmployees(
+    @Query('id') employeeId: string,
+    @CurrentUser('id') id: string,
+  ) {
+    return await this.employeesService.removeEmployee(id, employeeId);
   }
 }

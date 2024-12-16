@@ -1,6 +1,6 @@
 export enum EmploymentType {
-  FULL_TIME = 'Full-Time',
-  PART_TIME = 'Part-Time',
+  FULL_TIME = 'Full-time',
+  PART_TIME = 'Part-time',
   CONTRACT = 'Contract',
 }
 export enum StatusType {
