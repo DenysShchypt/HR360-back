@@ -3,38 +3,31 @@ import { AppError } from 'constants/errors';
 import { PrismaService } from 'modules/prisma/prisma.service';
 import { EmployeeDto } from './dto';
 import { Cron } from '@nestjs/schedule';
+import { EmployeeResponse } from './responses';
 
 @Injectable()
 export class EmployeesService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async getAllEmployees() {
+  async getAllEmployees(): Promise<EmployeeResponse[]> {
     const res = await this.prismaService.employees.findMany();
-
+    if (!res) throw new BadRequestException(AppError.WRONG_DATA);
     return res;
   }
-  async addEmployees(id: string, dto: EmployeeDto) {
+  async addEmployees(id: string, dto: EmployeeDto): Promise<EmployeeResponse> {
     const isEmployee = await this.prismaService.employees.findUnique({
       where: { name: dto.name },
     });
     if (isEmployee)
       throw new BadRequestException(AppError.EMPLOYEE_ALREADY_EXISTS);
 
-    const getDepartment = await this.prismaService.departments.findUnique({
-      where: { name: dto.department },
-    });
+    const getDepartment = await this.getDepartmentByName(dto.department);
 
     if (!getDepartment) {
       throw new BadRequestException('Department not found.');
     }
 
-    await this.prismaService.departments.update({
-      where: { id: getDepartment.id },
-      data: {
-        totalEmployee: getDepartment.totalEmployee + 1,
-        headcountChange: getDepartment.headcountChange + 1,
-      },
-    });
+    await this.updateDepartmentHeadcount(getDepartment.id, 1);
 
     const data = {
       userId: id,
@@ -56,33 +49,87 @@ export class EmployeesService {
     return newEmployee;
   }
 
-  async removeEmployee(id: string, employeeId: string) {
-    const getEmployee = await this.prismaService.employees.findUnique({
-      where: { id: employeeId },
-      include: { department: true },
-    });
+  async editEmployee(
+    id: string,
+    dto: EmployeeDto,
+    employeeId: string,
+  ): Promise<EmployeeResponse> {
+    const getEmployee = await this.getEmployeeById(employeeId);
 
     if (!getEmployee) {
       throw new BadRequestException('Employee not found');
     }
 
-    const department = getEmployee.department;
+    const getNewDepartment = await this.getDepartmentByName(dto.department);
+
+    if (getEmployee.department.id !== getNewDepartment.id) {
+      await this.updateDepartmentHeadcount(getEmployee.department.id, -1);
+      await this.updateDepartmentHeadcount(getNewDepartment.id, 1);
+    }
+
+    const updateEmployee = await this.prismaService.employees.update({
+      where: { id: employeeId },
+      data: {
+        name: dto.name,
+        photo: dto.photo,
+        role: dto.role,
+        employment: dto.employment,
+        status: dto.status,
+        checkIn: dto.checkIn,
+        checkOut: dto.checkOut,
+        overTime: dto.overTime,
+        userId: id,
+        departmentId: getNewDepartment.id,
+      },
+    });
+    return updateEmployee;
+  }
+
+  async removeEmployee(id: string, employeeId: string): Promise<void> {
+    const getEmployee = await this.getEmployeeById(employeeId);
+
+    if (!getEmployee) {
+      throw new BadRequestException('Employee not found');
+    }
 
     await this.prismaService.employees.delete({
       where: { id: employeeId },
     });
 
-    await this.prismaService.departments.update({
-      where: { id: department.id },
-      data: {
-        totalEmployee: department.totalEmployee - 1,
-        headcountChange: department.headcountChange - 1,
-      },
-    });
+    await this.updateDepartmentHeadcount(getEmployee.department.id, 1);
 
     return;
   }
 
+  private async getEmployeeById(employeeId: string) {
+    return await this.prismaService.employees.findUnique({
+      where: { id: employeeId },
+      include: { department: true },
+    });
+  }
+
+  private async getDepartmentByName(name: string) {
+    return await this.prismaService.departments.findUnique({
+      where: { name },
+    });
+  }
+
+  private async updateDepartmentHeadcount(
+    departmentId: string,
+    change: number,
+  ) {
+    await this.prismaService.departments.update({
+      where: { id: departmentId },
+      data: {
+        totalEmployee: {
+          increment: change,
+        },
+        headcountChange: {
+          increment: change,
+        },
+      },
+    });
+  }
   @Cron('0 0 1 * *')
   async resetHeadcountChange() {
     await this.prismaService.departments.updateMany({
